@@ -2,6 +2,7 @@
 
 #include "CharacterBase.h"
 #include "AttributeSetBase.h"
+#include "../Public/CharacterBase.h"
 
 
 // Sets default values
@@ -11,6 +12,7 @@ ACharacterBase::ACharacterBase()
 	PrimaryActorTick.bCanEverTick = true;
 	AbilitySystemComp = CreateDefaultSubobject < UAbilitySystemComponent>("AbilitySystemComp");
 	AttributeSetBaseComp = CreateDefaultSubobject<UAttributeSetBase>("AttributeSetBaseComp");
+	bIsDead = false;
 }
 
 // Called when the game starts or when spawned
@@ -24,6 +26,8 @@ void ACharacterBase::BeginPlay()
 void ACharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//subscribe to broadcast
+	AttributeSetBaseComp->OnHealthChange.AddDynamic(this, &ACharacterBase::OnHealthChanged);
 
 }
 
@@ -50,5 +54,14 @@ void ACharacterBase::AquireAbility(TSubclassOf<UGameplayAbility> AbilityToAquire
 		}
 		AbilitySystemComp->InitAbilityActorInfo(this, this);
 	}
+}
+
+void ACharacterBase::OnHealthChanged(float Health, float MaxHealth)
+{
+	if (Health <= 0.0f && !bIsDead) {
+		bIsDead = true;
+		BP_Die();
+	}
+	BP_OnHealthChanged(Health, MaxHealth);
 }
 
